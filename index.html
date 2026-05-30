@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>DermAtlas — Terminologi Morfologi Lesi Kulit</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root{
+    --bg:#0f172a; --surface:#1e293b; --surface2:#273449;
+    --line:#334155; --text:#e2e8f0; --muted:#94a3b8;
+    --accent:#2dd4bf; --accent2:#38bdf8; --warn:#fbbf24; --danger:#f87171;
+    /* skin strata for SVG */
+    --epi:#f4c9a8; --epi-line:#d99a73; --derm:#f6dccb; --sub:#fde9b8;
+    --lesion:#b45c8e;
+  }
+  html,body{background:var(--bg);color:var(--text);}
+  body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  /* ---- Professional Affirmation Gate ---- */
+  #gate{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+        background:rgba(15,23,42,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:1rem;}
+  #gate.hidden{display:none;}
+  .gate-card{max-width:30rem;width:100%;background:var(--surface);border:1px solid var(--line);
+        border-radius:1rem;padding:1.75rem;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+  .gate-reject{display:none;}
+  /* ---- cards / layout ---- */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:.85rem;cursor:pointer;
+        transition:transform .12s ease,border-color .12s ease;overflow:hidden;}
+  .card:hover{transform:translateY(-3px);border-color:var(--accent);}
+  .card.dim{opacity:.25;}
+  .card.hit{border-color:var(--accent2);box-shadow:0 0 0 2px var(--accent2) inset;}
+  .badge{font-size:.62rem;letter-spacing:.04em;text-transform:uppercase;font-weight:700;}
+  .badge-pri{background:#0d3b3a;color:var(--accent);}
+  .badge-sec{background:#0c2f47;color:var(--accent2);}
+  .flag{color:var(--warn);}
+  /* ---- detail modal ---- */
+  #detail{position:fixed;inset:0;z-index:80;display:none;align-items:flex-start;justify-content:center;
+          background:rgba(2,6,23,.7);padding:1rem;overflow-y:auto;}
+  #detail.open{display:flex;}
+  .detail-card{max-width:46rem;width:100%;background:var(--surface);border:1px solid var(--line);
+          border-radius:1rem;margin:2rem 0;}
+  /* ---- compare slots ---- */
+  .slot{border:1px dashed var(--line);border-radius:.75rem;min-height:5rem;}
+  .slot.filled{border-style:solid;border-color:var(--accent);}
+  .hl{background:rgba(251,191,36,.18);border-radius:.35rem;padding:0 .2rem;outline:1px solid var(--warn);}
+  /* sticky footer offset */
+  body{padding-bottom:3.25rem;}
+  #wip{position:fixed;left:0;right:0;bottom:0;z-index:70;}
+  table.morph td{padding:.3rem .55rem;border:1px solid var(--line);vertical-align:top;}
+  table.morph th{padding:.3rem .55rem;border:1px solid var(--line);background:var(--surface2);text-align:left;}
+</style>
+</head>
+<body>
+
+<!-- ============ PROFESSIONAL AFFIRMATION GATE ============ -->
+<div id="gate" class="hidden" aria-modal="true" role="dialog">
+  <div class="gate-card">
+    <div class="gate-main">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="text-2xl">🩺</span>
+        <h2 class="text-lg font-bold">Verifikasi Tenaga Kesehatan</h2>
+      </div>
+      <p class="text-sm" style="color:var(--muted)">
+        <strong>DermAtlas</strong> adalah alat belajar terminologi morfologi lesi kulit untuk
+        tenaga kesehatan. Ini <strong>bukan alat diagnostik</strong> — morfologi ≠ diagnosis.
+        Konten masih <strong>WORK IN PROGRESS</strong> dan belum diverifikasi.
+      </p>
+      <label class="flex items-start gap-2 mt-4 text-sm cursor-pointer select-none">
+        <input type="checkbox" id="gateChk" class="mt-1 w-4 h-4 accent-teal-400">
+        <span>Saya adalah <strong>tenaga kesehatan berlisensi</strong> dan memahami bahwa
+          alat ini hanya untuk referensi terminologi, bukan untuk keputusan klinis.</span>
+      </label>
+      <div class="flex gap-3 mt-5">
+        <button id="gateConfirm" disabled
+          class="flex-1 px-4 py-2 rounded-lg font-semibold bg-teal-500 text-slate-900
+                 disabled:opacity-40 disabled:cursor-not-allowed">
+          Konfirmasi & Masuk
+        </button>
+        <button id="gateReject"
+          class="px-4 py-2 rounded-lg font-semibold border border-slate-600"
+          style="color:var(--muted)">
+          Bukan / Keluar
+        </button>
+      </div>
+    </div>
+    <div class="gate-reject">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="text-2xl">🚫</span>
+        <h2 class="text-lg font-bold" style="color:var(--danger)">Akses Dihentikan</h2>
+      </div>
+      <p class="text-sm" style="color:var(--muted)">
+        Alat ini ditujukan untuk tenaga kesehatan berlisensi. Jika Anda memerlukan informasi
+        kesehatan atau menghadapi keadaan darurat, hubungi layanan kesehatan:
+      </p>
+      <p class="mt-3 text-center text-lg font-bold" style="color:var(--accent)">
+        ☎️ Hotline 119 ext 8
+      </p>
+      <button id="gateBack" class="w-full mt-4 px-4 py-2 rounded-lg border border-slate-600 text-sm"
+        style="color:var(--muted)">Kembali</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ HEADER ============ -->
+<header class="max-w-6xl mx-auto px-4 pt-6 pb-3">
+  <div class="flex items-center gap-3 flex-wrap">
+    <h1 class="text-2xl font-extrabold tracking-tight">
+      Derm<span style="color:var(--accent)">Atlas</span>
+    </h1>
+    <span class="text-xs px-2 py-1 rounded-full" style="background:var(--surface2);color:var(--muted)">
+      Terminologi morfologi lesi kulit primer &amp; sekunder
+    </span>
+  </div>
+  <p class="text-sm mt-2" style="color:var(--muted)">
+    Alat belajar & pengajaran. <span class="flag font-semibold">⚠️ Ini referensi terminologi,
+    BUKAN alat diagnostik — morfologi ≠ diagnosis.</span>
+  </p>
+</header>
+
+<!-- ============ CONTROLS ============ -->
+<section class="max-w-6xl mx-auto px-4">
+  <div class="flex flex-col md:flex-row md:items-center gap-3 mb-4">
+    <input id="search" type="text" placeholder="Cari istilah… (mis. papul, ulkus, urtika, urticaria)"
+      class="flex-1 px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-sm
+             focus:outline-none focus:border-teal-400">
+    <div class="flex gap-1 rounded-lg p-1" style="background:var(--surface2)">
+      <button data-filter="all"  class="filt px-3 py-1.5 rounded-md text-sm font-medium">Semua</button>
+      <button data-filter="primary" class="filt px-3 py-1.5 rounded-md text-sm font-medium">Primer</button>
+      <button data-filter="secondary" class="filt px-3 py-1.5 rounded-md text-sm font-medium">Sekunder</button>
+    </div>
+    <button id="cmpToggle"
+      class="px-3 py-2 rounded-lg text-sm font-semibold border border-slate-600">
+      ⇄ Mode Bandingkan
+    </button>
+  </div>
+
+  <!-- compare panel -->
+  <div id="cmpPanel" class="hidden mb-5 p-4 rounded-xl" style="background:var(--surface)">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-sm font-semibold">Bandingkan 2 istilah — fitur pembeda akan disorot</p>
+      <button id="cmpClear" class="text-xs px-2 py-1 rounded border border-slate-600"
+        style="color:var(--muted)">Reset</button>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div id="slotA" class="slot p-3 flex items-center justify-center text-sm"
+        style="color:var(--muted)">Pilih istilah pertama →</div>
+      <div id="slotB" class="slot p-3 flex items-center justify-center text-sm"
+        style="color:var(--muted)">Pilih istilah kedua →</div>
+    </div>
+    <div id="cmpResult" class="mt-3"></div>
+  </div>
+
+  <p id="count" class="text-xs mb-2" style="color:var(--muted)"></p>
+  <div id="grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 pb-6"></div>
+</section>
+
+<!-- ============ SOURCE / INFO PANEL ============ -->
+<section class="max-w-6xl mx-auto px-4 pb-8">
+  <details class="rounded-xl p-4" style="background:var(--surface);border:1px solid var(--line)">
+    <summary class="cursor-pointer font-semibold text-sm">ℹ️ Sumber & catatan akurasi</summary>
+    <div class="text-sm mt-3 space-y-2" style="color:var(--muted)">
+      <p><strong>Kerangka morfologi:</strong> Fitzpatrick's Dermatology, 9th ed. (McGraw-Hill, 2019),
+         konvensi ambang ukuran 1 cm.</p>
+      <p class="flag">⚠️ Ambang ukuran berbeda antar sumber. Fitzpatrick & Merck Manual memakai
+         1 cm (10 mm); sebagian teks lain memakai 0,5 cm. Setiap istilah yang terdampak diberi tanda ⚠️.</p>
+      <p class="flag">⚠️ Tidak semua pembeda adalah ukuran: <strong>papul→nodul</strong> dibedakan oleh
+         <em>kedalaman</em> (nodul meluas ke dermis/subkutis), dan <strong>papul→plak</strong> oleh
+         <em>konfigurasi</em> (plak = dataran/konfluensi), bukan ukuran semata.</p>
+      <p class="flag">⚠️ "Tumor" sebagai istilah morfologi tidak universal — banyak teks modern
+         meleburnya ke "nodul besar" (umumnya >2 cm).</p>
+      <p>📚 Database belum lengkap: 12 lesi primer + 10 lesi sekunder tercakup; banyak deskriptor
+         (konfigurasi, distribusi, warna) belum dimasukkan.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ============ DETAIL MODAL ============ -->
+<div id="detail" role="dialog" aria-modal="true">
+  <div class="detail-card" id="detailCard"></div>
+</div>
+
+<!-- ============ STICKY WIP FOOTER ============ -->
+<div id="wip" class="text-center text-xs font-semibold py-2 px-3"
+     style="background:#451a03;color:var(--warn);border-top:1px solid #78350f">
+  ⚠️ WORK IN PROGRESS — Konten belum diverifikasi. Tidak untuk keputusan klinis.
+</div>
+
+<script>
+/* ============================================================
+   DERMATLAS — DATA
+   Framework: Fitzpatrick's Dermatology 9th ed. (2019), 1 cm convention.
+   attrs{} drives the comparison auto-diff (differing attrs get highlighted).
+   morph{} drives the SVG generator (shape archetype + modifiers).
+   ============================================================ */
+const DATA = [
+  /* ---------------- PRIMARY ---------------- */
+  { id:"macule", en:"Macule", idn:"Makula", cat:"primary",
+    def:"Perubahan warna kulit yang datar, tidak teraba, dan berbatas tegas (< 1 cm).",
+    size:"< 1 cm — pembeda dari patch (≥ 1 cm)",
+    example:"Efelid (freckle), makula café-au-lait, vitiligo dini",
+    flags:["Ambang 1 cm (Fitzpatrick/Merck); sebagian sumber pakai 0,5 cm."],
+    attrs:{ Elevasi:"Datar", Ukuran:"< 1 cm", Kedalaman:"Epidermis", Isi:"Pigmen / warna", Permukaan:"Halus" },
+    morph:{ shape:"flat", width:"small", color:"#9a6b4f" } },
+
+  { id:"patch", en:"Patch", idn:"Patch (makula luas)", cat:"primary",
+    def:"Makula berukuran besar (≥ 1 cm); tetap datar dan tidak teraba.",
+    size:"≥ 1 cm — pembeda dari makula (< 1 cm)",
+    example:"Vitiligo luas, café-au-lait besar, morfea dini",
+    flags:["Ambang 1 cm; sebagian sumber pakai 0,5 cm.","DermNet mendefinisikan tanpa angka pasti ('makula besar')."],
+    attrs:{ Elevasi:"Datar", Ukuran:"≥ 1 cm", Kedalaman:"Epidermis", Isi:"Pigmen / warna", Permukaan:"Halus" },
+    morph:{ shape:"flat", width:"large", color:"#9a6b4f" } },
+
+  { id:"papule", en:"Papule", idn:"Papul", cat:"primary",
+    def:"Lesi padat menonjol berbatas tegas berukuran < 1 cm.",
+    size:"< 1 cm — pembeda dari nodul (kedalaman) & plak (konfigurasi)",
+    example:"Liken planus, moluskum kontagiosum, kutil",
+    flags:["Sebagian sumber pakai 0,5 cm."],
+    attrs:{ Elevasi:"Menonjol", Ukuran:"< 1 cm", Kedalaman:"Epidermis / dermis atas", Isi:"Padat", Permukaan:"Halus" },
+    morph:{ shape:"dome", width:"small", color:"#b45c8e" } },
+
+  { id:"plaque", en:"Plaque", idn:"Plak", cat:"primary",
+    def:"Lesi menonjol seperti dataran tinggi (plateau) dengan luas permukaan jauh melebihi tingginya, biasanya ≥ 1 cm.",
+    size:"≥ 1 cm — TAPI pembeda utama dari papul adalah KONFIGURASI, bukan ukuran",
+    example:"Psoriasis, dermatitis numularis",
+    flags:["Pembeda papul→plak = konfigurasi (dataran/konfluensi papul), bukan ukuran semata."],
+    attrs:{ Elevasi:"Menonjol (dataran)", Ukuran:"≥ 1 cm", Kedalaman:"Epidermis / dermis", Isi:"Padat", Permukaan:"Datar di atas" },
+    morph:{ shape:"plateau", width:"large", color:"#b45c8e" } },
+
+  { id:"nodule", en:"Nodule", idn:"Nodul", cat:"primary",
+    def:"Lesi padat menonjol yang meluas ke dermis dan/atau subkutis, biasanya > 1 cm.",
+    size:"> 1 cm — TAPI pembeda utama dari papul adalah KEDALAMAN",
+    example:"Eritema nodosum, nodul reumatoid, kista (klinis)",
+    flags:["Pembeda papul→nodul = kedalaman (meluas ke dermis/subkutis), bukan ukuran semata.","Sebagian sumber pakai ambang 0,5 cm."],
+    attrs:{ Elevasi:"Menonjol", Ukuran:"> 1 cm", Kedalaman:"Dermis – subkutis", Isi:"Padat", Permukaan:"Halus" },
+    morph:{ shape:"deepnod", width:"large", color:"#a85284" } },
+
+  { id:"tumor", en:"Tumor", idn:"Tumor", cat:"primary",
+    def:"Massa padat besar pada kulit atau subkutis, lebih besar daripada nodul (umumnya > 2 cm).",
+    size:"> 2 cm (umumnya) — lebih besar dari nodul",
+    example:"Neoplasma kulit besar, lipoma besar",
+    flags:["Istilah morfologi TIDAK universal — banyak teks modern meleburnya ke 'nodul besar'.","Berkonotasi neoplasma; gunakan dengan hati-hati."],
+    attrs:{ Elevasi:"Menonjol", Ukuran:"> 2 cm", Kedalaman:"Dermis – subkutis", Isi:"Padat", Permukaan:"Halus" },
+    morph:{ shape:"deepnod", width:"xl", color:"#9c4a78" } },
+
+  { id:"vesicle", en:"Vesicle", idn:"Vesikel", cat:"primary",
+    def:"Lesi berbatas tegas berisi cairan jernih, berukuran < 1 cm.",
+    size:"< 1 cm — pembeda dari bula (≥ 1 cm)",
+    example:"Herpes simpleks, varisela, dermatitis kontak akut",
+    flags:["Sebagian sumber pakai 0,5 cm."],
+    attrs:{ Elevasi:"Menonjol", Ukuran:"< 1 cm", Kedalaman:"Intra/subepidermal", Isi:"Cairan jernih", Permukaan:"Atap tipis" },
+    morph:{ shape:"blister", width:"small", color:"#cfe8f5" } },
+
+  { id:"bulla", en:"Bulla", idn:"Bula", cat:"primary",
+    def:"Lesi berbatas tegas berisi cairan, berukuran ≥ 1 cm.",
+    size:"≥ 1 cm — pembeda dari vesikel (< 1 cm)",
+    example:"Pemfigoid bulosa, luka bakar derajat II, SJS/TEN",
+    flags:["Sebagian sumber pakai 0,5 cm."],
+    attrs:{ Elevasi:"Menonjol", Ukuran:"≥ 1 cm", Kedalaman:"Intra/subepidermal", Isi:"Cairan jernih", Permukaan:"Atap tipis" },
+    morph:{ shape:"blister", width:"large", color:"#cfe8f5" } },
+
+  { id:"pustule", en:"Pustule", idn:"Pustul", cat:"primary",
+    def:"Lesi menonjol berbatas tegas yang berisi pus (nanah).",
+    size:"Umumnya < 1 cm; dibedakan dari vesikel oleh ISI (pus, bukan cairan jernih)",
+    example:"Akne pustular, folikulitis, psoriasis pustulosa / AGEP",
+    flags:["Isi keruh (pus) tidak selalu berarti infeksi (mis. AGEP steril)."],
+    attrs:{ Elevasi:"Menonjol", Ukuran:"< 1 cm", Kedalaman:"Intra/subepidermal", Isi:"Pus", Permukaan:"Atap tipis" },
+    morph:{ shape:"blister", width:"small", color:"#f1de8e", pus:true } },
+
+  { id:"wheal", en:"Wheal", idn:"Urtika", cat:"primary",
+    def:"Plak edematosa yang menonjol, sementara (transien, hilang < 24 jam) akibat edema dermis.",
+    size:"Bervariasi; ciri utama = SIFAT TRANSIEN, bukan ukuran",
+    example:"Urtikaria (biduran), reaksi gigitan serangga",
+    flags:["Pembeda utama adalah sifat sementara/evanescent, bukan ukuran."],
+    attrs:{ Elevasi:"Menonjol (edema)", Ukuran:"Bervariasi", Kedalaman:"Dermis (edema)", Isi:"Edema (cairan jaringan)", Permukaan:"Halus" },
+    morph:{ shape:"wheal", width:"large", color:"#f3c6c6" } },
+
+  { id:"cyst", en:"Cyst", idn:"Kista", cat:"primary",
+    def:"Rongga berdinding (berkapsul) berisi cairan atau material semisolid; teraba fluktuan.",
+    size:"Bervariasi; ciri utama = berkapsul & fluktuan",
+    example:"Kista epidermoid, kista pilar",
+    flags:["Teraba sebagai nodul; pembeda histologik = dinding epitel + isi semisolid."],
+    attrs:{ Elevasi:"Menonjol", Ukuran:"Bervariasi", Kedalaman:"Dermis – subkutis", Isi:"Cairan / semisolid (berkapsul)", Permukaan:"Halus" },
+    morph:{ shape:"cyst", width:"large", color:"#dfe7ea" } },
+
+  { id:"telangiectasia", en:"Telangiectasia", idn:"Telangiektasia", cat:"primary",
+    def:"Pelebaran pembuluh darah superfisial yang tampak sebagai garis halus kemerahan.",
+    size:"Tidak relevan (didefinisikan oleh pembuluh, bukan ukuran lesi)",
+    example:"Rosasea, sindrom CREST, kerusakan akibat sinar matahari",
+    flags:["Memucat (blanch) saat ditekan — pembeda dari purpura."],
+    attrs:{ Elevasi:"Datar", Ukuran:"—", Kedalaman:"Dermis superfisial", Isi:"Pembuluh darah melebar", Permukaan:"Halus" },
+    morph:{ shape:"vessel", width:"large", color:"#d23f57" } },
+
+  /* ---------------- SECONDARY ---------------- */
+  { id:"scale", en:"Scale", idn:"Skuama", cat:"secondary",
+    def:"Penumpukan atau pelepasan stratum korneum (lapisan tanduk) yang berlebihan.",
+    size:"—",
+    example:"Psoriasis (skuama tebal keperakan), dermatitis seboroik",
+    flags:[],
+    attrs:{ Elevasi:"Permukaan", Ukuran:"—", Kedalaman:"Stratum korneum", Isi:"Keratin", Permukaan:"Bersisik" },
+    morph:{ shape:"scale", width:"large", color:"#e7ddd0" } },
+
+  { id:"crust", en:"Crust", idn:"Krusta", cat:"secondary",
+    def:"Cairan tubuh yang mengering di permukaan kulit (serum, darah, atau pus).",
+    size:"—",
+    example:"Impetigo (krusta warna madu), ekzema yang merembes",
+    flags:[],
+    attrs:{ Elevasi:"Permukaan", Ukuran:"—", Kedalaman:"Permukaan", Isi:"Eksudat kering", Permukaan:"Kasar / berkerak" },
+    morph:{ shape:"crust", width:"large", color:"#9c6b3f" } },
+
+  { id:"erosion", en:"Erosion", idn:"Erosi", cat:"secondary",
+    def:"Hilangnya sebagian atau seluruh epidermis tanpa mencapai dermis; sembuh tanpa jaringan parut.",
+    size:"— ; pembeda dari ulkus = KEDALAMAN",
+    example:"Pasca pecahnya vesikel/bula, impetigo",
+    flags:["Pembeda erosi↔ulkus = kedalaman; erosi sembuh tanpa parut, ulkus dengan parut."],
+    attrs:{ Elevasi:"Cekung", Ukuran:"—", Kedalaman:"Hilangnya epidermis", Isi:"—", Permukaan:"Lembap, dasar merah" },
+    morph:{ shape:"erosion", width:"large", color:"#d98c8c" } },
+
+  { id:"ulcer", en:"Ulcer", idn:"Ulkus", cat:"secondary",
+    def:"Hilangnya epidermis dan setidaknya sebagian dermis (atau lebih dalam); sembuh dengan jaringan parut.",
+    size:"— ; pembeda dari erosi = KEDALAMAN",
+    example:"Ulkus venosum, ulkus diabetik, ulkus dekubitus",
+    flags:["Lebih dalam dari erosi (mencapai dermis±subkutis); sembuh dengan parut."],
+    attrs:{ Elevasi:"Cekung", Ukuran:"—", Kedalaman:"Hilangnya epidermis – dermis", Isi:"—", Permukaan:"Dasar dalam, tepi tegas" },
+    morph:{ shape:"ulcer", width:"large", color:"#b85b5b" } },
+
+  { id:"fissure", en:"Fissure", idn:"Fisura", cat:"secondary",
+    def:"Retakan linear pada kulit yang menembus epidermis hingga ke dermis.",
+    size:"—",
+    example:"Keilitis angularis, ekzema kering pada tumit",
+    flags:[],
+    attrs:{ Elevasi:"Cekung (linear)", Ukuran:"—", Kedalaman:"Epidermis – dermis", Isi:"—", Permukaan:"Celah linear" },
+    morph:{ shape:"fissure", width:"small", color:"#a14e4e" } },
+
+  { id:"excoriation", en:"Excoriation", idn:"Ekskoriasi", cat:"secondary",
+    def:"Erosi linear yang disebabkan oleh garukan.",
+    size:"—",
+    example:"Skabies, prurigo, pruritus kronis",
+    flags:["Bentuk linear menandakan trauma mekanik (garukan)."],
+    attrs:{ Elevasi:"Cekung (linear)", Ukuran:"—", Kedalaman:"Hilangnya epidermis", Isi:"—", Permukaan:"Gores linear, sering berkrusta" },
+    morph:{ shape:"excoriation", width:"large", color:"#c06b6b" } },
+
+  { id:"lichenification", en:"Lichenification", idn:"Likenifikasi", cat:"secondary",
+    def:"Penebalan epidermis dengan penonjolan garis-garis kulit akibat garukan/gosokan kronis.",
+    size:"—",
+    example:"Liken simpleks kronikus, dermatitis atopik kronis",
+    flags:[],
+    attrs:{ Elevasi:"Menonjol (menebal)", Ukuran:"—", Kedalaman:"Epidermis (menebal)", Isi:"—", Permukaan:"Garis kulit menonjol" },
+    morph:{ shape:"lichen", width:"large", color:"#b07b96" } },
+
+  { id:"atrophy", en:"Atrophy", idn:"Atrofi", cat:"secondary",
+    def:"Penipisan epidermis dan/atau dermis sehingga kulit tampak tipis dan berkerut.",
+    size:"—",
+    example:"Atrofi akibat steroid topikal, liken sklerosus",
+    flags:[],
+    attrs:{ Elevasi:"Cekung (menipis)", Ukuran:"—", Kedalaman:"Epidermis ± dermis (menipis)", Isi:"—", Permukaan:"Tipis, berkerut, mengkilap" },
+    morph:{ shape:"atrophy", width:"large", color:"#e7d6cf" } },
+
+  { id:"scar", en:"Scar", idn:"Sikatriks (parut)", cat:"secondary",
+    def:"Jaringan fibrosa yang menggantikan kulit normal setelah cedera dermis.",
+    size:"—",
+    example:"Parut akne, parut bedah, keloid",
+    flags:[],
+    attrs:{ Elevasi:"Datar / cekung / menonjol", Ukuran:"—", Kedalaman:"Dermis (digantikan fibrosis)", Isi:"Jaringan parut", Permukaan:"Tanpa adneksa, mengkilap" },
+    morph:{ shape:"scar", width:"large", color:"#ece0d8" } },
+
+  { id:"eschar", en:"Eschar", idn:"Eskar", cat:"secondary",
+    def:"Jaringan nekrotik kering berwarna gelap (devitalized) yang melekat erat.",
+    size:"—",
+    example:"Luka bakar dalam, ulkus dekubitus, gigitan laba-laba/antraks",
+    flags:["Menandakan nekrosis jaringan di bawahnya; sering menutupi defek yang lebih dalam."],
+    attrs:{ Elevasi:"Permukaan (melekat)", Ukuran:"—", Kedalaman:"Nekrosis dermis±", Isi:"Jaringan nekrotik", Permukaan:"Keras, hitam, kering" },
+    morph:{ shape:"eschar", width:"large", color:"#2e2420" } },
+];
+
+/* ============================================================
+   SVG GENERATOR — cross-section (Penampang) + top view (Tampak atas)
+   viewBox 0 0 300 160. Skin surface baseline y=57.
+   ============================================================ */
+function widthPx(w){ return w==="small"?34 : w==="xl"?116 : 78; } // footprint
+
+function strata(){
+  return `
+    <rect x="12" y="118" width="176" height="32" fill="var(--sub)"/>
+    <rect x="12" y="68"  width="176" height="50" fill="var(--derm)"/>
+    <rect x="12" y="57"  width="176" height="11" fill="var(--epi)"/>
+    <line x1="12" y1="57" x2="188" y2="57" stroke="var(--epi-line)" stroke-width="1.5"/>
+    <text x="14" y="66" font-size="6" fill="#9a6b4f">epidermis</text>
+    <text x="14" y="92" font-size="6" fill="#b98a6e">dermis</text>
+    <text x="14" y="138" font-size="6" fill="#c0a25a">subkutis</text>`;
+}
+
+function topLabel(){
+  return `<text x="100" y="153" font-size="7" fill="var(--muted)" text-anchor="middle">Penampang</text>
+          <text x="245" y="153" font-size="7" fill="var(--muted)" text-anchor="middle">Tampak atas</text>`;
+}
+
+// top-down disc helper
+function disc(fill,extra="",r=30){ return `<circle cx="245" cy="82" r="${r}" fill="${fill}" ${extra}/>`; }
+function discRaised(fill,r=30){
+  return `<circle cx="245" cy="82" r="${r}" fill="${fill}"/>
+          <circle cx="237" cy="74" r="${r*0.45}" fill="#ffffff" opacity="0.25"/>`;
+}
+
+function lesionSVG(m){
+  const w = widthPx(m.width), xc = 100, x0 = xc - w/2, x1 = xc + w/2, c = m.color;
+  let cs="", top="";
+
+  switch(m.shape){
+    case "flat": // macule / patch
+      cs = `<rect x="${x0}" y="57.5" width="${w}" height="10" fill="${c}" opacity="0.85"/>`;
+      top = disc(c,'opacity="0.85"');
+      break;
+
+    case "dome": // papule
+      cs = `<path d="M${x0} 57 Q${xc} 30 ${x1} 57 Z" fill="${c}"/>`;
+      top = discRaised(c,24);
+      break;
+
+    case "deepnod": // nodule / tumor — protrudes up AND extends deep
+      { const depthY = m.width==="xl" ? 126 : 108;
+        cs = `<path d="M${x0} 57 Q${xc} ${m.width==="xl"?22:34} ${x1} 57
+                       Q${x1+6} ${depthY} ${xc} ${depthY}
+                       Q${x0-6} ${depthY} ${x0} 57 Z" fill="${c}"/>`;
+        top = discRaised(c, m.width==="xl"?34:30);
+      }
+      break;
+
+    case "plateau": // plaque — broad, flat-topped, low
+      cs = `<path d="M${x0} 57 L${x0+6} 44 L${x1-6} 44 L${x1} 57 Z" fill="${c}"/>
+            <line x1="${x0+6}" y1="44" x2="${x1-6}" y2="44" stroke="#7a3c61" stroke-width="1"/>`;
+      top = `<rect x="${245-32}" y="${82-32}" width="64" height="64" rx="10" fill="${c}"/>
+             <rect x="${245-24}" y="${82-24}" width="40" height="14" rx="6" fill="#ffffff" opacity="0.2"/>`;
+      break;
+
+    case "blister": // vesicle / bulla / pustule
+      cs = `<path d="M${x0} 57 Q${xc} ${m.width==="large"?26:34} ${x1} 57 Z"
+                  fill="${c}" stroke="#7fb8d6" stroke-width="1.3" opacity="0.92"/>
+            ${m.pus?`<ellipse cx="${xc}" cy="50" rx="${w*0.28}" ry="5" fill="#cda93a" opacity="0.7"/>`:""}`;
+      top = `<circle cx="245" cy="82" r="${m.width==="large"?32:24}" fill="${c}"
+                     stroke="#7fb8d6" stroke-width="1.5" opacity="0.92"/>
+             <circle cx="237" cy="74" r="7" fill="#ffffff" opacity="0.5"/>`;
+      break;
+
+    case "wheal": // transient edematous plaque
+      cs = `<path d="M${x0} 57 Q${xc} 40 ${x1} 57 Z" fill="${c}" opacity="0.85"/>
+            <path d="M${x0} 57 Q${xc} 40 ${x1} 57" fill="none" stroke="#d98aa0"
+                  stroke-width="1.2" stroke-dasharray="4 3"/>`;
+      top = `<circle cx="245" cy="82" r="32" fill="${c}" opacity="0.55"/>
+             <circle cx="245" cy="82" r="32" fill="none" stroke="#d98aa0" stroke-width="1.4" stroke-dasharray="5 3"/>
+             <circle cx="245" cy="82" r="13" fill="#ffffff" opacity="0.55"/>`;
+      break;
+
+    case "cyst": // encapsulated sac in dermis
+      cs = `<path d="M${x0} 57 Q${xc} 48 ${x1} 57 Z" fill="${c}" opacity="0.5"/>
+            <ellipse cx="${xc}" cy="92" rx="${w*0.42}" ry="22" fill="${c}"
+                     stroke="#9fb0b6" stroke-width="1.6"/>`;
+      top = discRaised(c,30);
+      break;
+
+    case "vessel": // telangiectasia — superficial dilated vessels
+      cs = `<g stroke="${c}" stroke-width="1.4" fill="none" opacity="0.9">
+              <path d="M40 64 Q70 60 100 65 T160 63"/>
+              <path d="M70 64 q8 6 18 4"/><path d="M120 64 q-8 6 -18 5"/>
+            </g>`;
+      top = `<g stroke="${c}" stroke-width="1.6" fill="none">
+               <path d="M222 78 Q245 70 268 80"/><path d="M245 74 q-6 12 4 18"/>
+               <path d="M238 76 q-10 8 -16 16"/><path d="M252 76 q12 6 14 16"/>
+             </g>`;
+      break;
+
+    case "scale": // excess stratum corneum flakes
+      cs = `${flakes(x0,x1)}`;
+      top = `${disc("#f0e7da")}${flakeDots()}`;
+      break;
+
+    case "crust": // dried exudate slab
+      cs = `<path d="M${x0} 57 q10 -10 20 0 q12 -9 22 1 q12 -8 22 2 q8 -6 14 -1 L${x1} 57 Z"
+                  fill="${c}" opacity="0.92"/>`;
+      top = `<path d="M218 70 q12 -8 24 0 q14 -6 26 3 q6 14 -4 24 q-18 8 -34 0 q-16 -10 -8 -27 Z"
+                   fill="${c}" opacity="0.92"/>`;
+      break;
+
+    case "erosion": // loss of epidermis only — shallow
+      cs = `<rect x="12" y="57" width="176" height="11" fill="var(--epi)"/>
+            <path d="M${x0} 57 Q${xc} 70 ${x1} 57 Z" fill="var(--derm)"/>
+            <path d="M${x0} 57 Q${xc} 70 ${x1} 57" fill="none" stroke="${c}" stroke-width="2"/>`;
+      top = `<circle cx="245" cy="82" r="30" fill="${c}" opacity="0.6"/>
+             <circle cx="245" cy="82" r="30" fill="none" stroke="#9c5252" stroke-width="1.4"/>`;
+      break;
+
+    case "ulcer": // loss into dermis — deep crater
+      cs = `<path d="M${x0} 57 L${x0+10} 98 Q${xc} 108 ${x1-10} 98 L${x1} 57 Z" fill="var(--sub)"/>
+            <path d="M${x0} 57 L${x0+10} 98 Q${xc} 108 ${x1-10} 98 L${x1} 57"
+                  fill="none" stroke="${c}" stroke-width="2"/>`;
+      top = `<circle cx="245" cy="82" r="32" fill="#7a3a3a"/>
+             <circle cx="245" cy="82" r="22" fill="${c}" opacity="0.85"/>
+             <circle cx="245" cy="82" r="32" fill="none" stroke="#5e2a2a" stroke-width="2"/>`;
+      break;
+
+    case "fissure": // linear crack epidermis→dermis
+      cs = `<path d="M${xc} 57 L${xc-2} 90 L${xc+2} 90 Z" fill="${c}"/>
+            <line x1="${xc}" y1="57" x2="${xc}" y2="90" stroke="${c}" stroke-width="2"/>`;
+      top = `<line x1="245" y1="54" x2="245" y2="110" stroke="${c}" stroke-width="3" stroke-linecap="round"/>`;
+      break;
+
+    case "excoriation": // linear scratch erosion
+      cs = `<path d="M${x0} 57 Q${xc} 67 ${x1} 57" fill="none" stroke="${c}" stroke-width="2.2"/>
+            <line x1="${x0+18}" y1="57" x2="${x0+40}" y2="63" stroke="#7a3030" stroke-width="1.4"/>`;
+      top = `<line x1="216" y1="64" x2="274" y2="100" stroke="${c}" stroke-width="4" stroke-linecap="round"/>
+             <line x1="222" y1="58" x2="268" y2="94" stroke="#7a3030" stroke-width="1.6"/>`;
+      break;
+
+    case "lichen": // thickened epidermis, accentuated markings
+      cs = `<rect x="${x0}" y="49" width="${w}" height="8" fill="${c}" opacity="0.5"/>
+            <path d="M${x0} 49 q6 -5 12 0 q6 -5 12 0 q6 -5 12 0 q6 -5 12 0 q6 -5 12 0 q6 -5 12 0"
+                  fill="none" stroke="#8a5a73" stroke-width="1.3"/>`;
+      top = `<rect x="213" y="50" width="64" height="64" rx="8" fill="${c}" opacity="0.6"/>
+             <g stroke="#8a5a73" stroke-width="1.3">
+               <line x1="221" y1="58" x2="269" y2="58"/><line x1="221" y1="74" x2="269" y2="74"/>
+               <line x1="221" y1="90" x2="269" y2="90"/><line x1="221" y1="106" x2="269" y2="106"/>
+               <line x1="229" y1="54" x2="229" y2="110"/><line x1="245" y1="54" x2="245" y2="110"/>
+               <line x1="261" y1="54" x2="261" y2="110"/></g>`;
+      break;
+
+    case "atrophy": // thinned skin, depressed, wrinkled
+      cs = `<rect x="${x0}" y="60" width="${w}" height="5" fill="var(--epi)"/>
+            <rect x="${x0}" y="65" width="${w}" height="28" fill="var(--derm)" opacity="0.6"/>
+            <path d="M${x0} 60 q14 4 28 0 q14 4 28 0" fill="none" stroke="${c}" stroke-width="1.2"/>`;
+      top = `<circle cx="245" cy="82" r="30" fill="${c}" opacity="0.7"/>
+             <g stroke="#c9b3a8" stroke-width="1" fill="none">
+               <path d="M222 76 q23 -6 46 2"/><path d="M222 86 q23 6 46 -2"/></g>`;
+      break;
+
+    case "scar": // fibrous replacement of dermis
+      cs = `<rect x="${x0}" y="57" width="${w}" height="10" fill="${c}"/>
+            <rect x="${x0}" y="67" width="${w}" height="26" fill="${c}" opacity="0.7"/>
+            <line x1="${x0}" y1="57" x2="${x1}" y2="57" stroke="#cbb8ad" stroke-width="1"/>`;
+      top = `<ellipse cx="245" cy="82" rx="34" ry="14" fill="${c}"/>
+             <ellipse cx="245" cy="82" rx="34" ry="14" fill="none" stroke="#cbb8ad" stroke-width="1.2"/>`;
+      break;
+
+    case "eschar": // dark adherent necrotic slab over deep defect
+      cs = `<path d="M${x0} 57 L${x0+8} 96 Q${xc} 104 ${x1-8} 96 L${x1} 57 Z" fill="#7a3a3a" opacity="0.5"/>
+            <path d="M${x0-2} 55 q12 -6 24 1 q14 -5 26 2 L${x1+2} 56 q-4 14 -14 16 q-20 6 -38 0 q-8 -8 2 -17 Z"
+                  fill="${c}"/>`;
+      top = `<path d="M216 68 q14 -7 28 0 q16 -5 28 4 q5 16 -6 26 q-20 9 -38 1 q-18 -11 -12 -31 Z" fill="${c}"/>
+             <path d="M230 74 q10 4 22 0" stroke="#5a4a40" stroke-width="1" fill="none"/>`;
+      break;
+
+    default:
+      cs = `<rect x="${x0}" y="57.5" width="${w}" height="10" fill="${c}"/>`;
+      top = disc(c);
+  }
+
+  return `<svg viewBox="0 0 300 160" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto">
+            ${strata()}
+            ${cs}
+            <line x1="200" y1="20" x2="200" y2="148" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/>
+            ${top}
+            ${topLabel()}
+          </svg>`;
+}
+
+// scale flake helpers
+function flakes(x0,x1){
+  let s=""; for(let x=x0;x<x1-6;x+=9){ s+=`<path d="M${x} 57 l9 -6 l0 6 Z" fill="#efe6d8" stroke="#cdbfa8" stroke-width="0.6"/>`; }
+  return s;
+}
+function flakeDots(){
+  let s=""; const pts=[[232,72],[252,70],[244,86],[230,90],[258,88],[245,78]];
+  pts.forEach(([x,y])=>{ s+=`<path d="M${x} ${y} l8 -5 l0 5 Z" fill="#fff" stroke="#cdbfa8" stroke-width="0.6"/>`; });
+  return s;
+}
+</script>
+
+<script>
+/* ============================================================
+   DERMATLAS — APP LOGIC
+   ============================================================ */
+document.addEventListener("DOMContentLoaded", () => {
+  const grid   = document.getElementById("grid");
+  const search = document.getElementById("search");
+  const count  = document.getElementById("count");
+  const detail = document.getElementById("detail");
+  const dCard  = document.getElementById("detailCard");
+  const cmpToggle = document.getElementById("cmpToggle");
+  const cmpPanel  = document.getElementById("cmpPanel");
+  const cmpResult = document.getElementById("cmpResult");
+  const slotA = document.getElementById("slotA");
+  const slotB = document.getElementById("slotB");
+  const cmpClear = document.getElementById("cmpClear");
+
+  let filter = "all";
+  let compareMode = false;
+  let picks = [null, null];
+
+  /* synonyms for smart search (EN + Bahasa + lay terms) */
+  const SYN = {
+    macule:["makula","bercak datar"], patch:["makula luas","bercak luas"],
+    papule:["papul","papula","tonjolan kecil"], plaque:["plak","plakat"],
+    nodule:["nodul","benjolan"], tumor:["tumor","massa"],
+    vesicle:["vesikel","gelembung","lepuh kecil","blister kecil"],
+    bulla:["bula","lepuh","blister besar","bullae"],
+    pustule:["pustul","nanah","jerawat nanah"],
+    wheal:["urtika","urtikaria","biduran","bidur","hives","kaligata"],
+    cyst:["kista"], telangiectasia:["telangiektasia","pembuluh melebar"],
+    scale:["skuama","sisik"], crust:["krusta","keropeng","koreng"],
+    erosion:["erosi"], ulcer:["ulkus","borok","luka dalam"],
+    fissure:["fisura","retak","celah"], excoriation:["ekskoriasi","bekas garukan","garukan"],
+    lichenification:["likenifikasi","penebalan kulit"], atrophy:["atrofi","penipisan"],
+    scar:["sikatriks","parut","bekas luka","keloid"], eschar:["eskar","jaringan mati","nekrosis kering"]
+  };
+
+  /* ---- build cards ---- */
+  DATA.forEach(t => {
+    const el = document.createElement("div");
+    el.className = "card p-2";
+    el.dataset.id = t.id; el.dataset.cat = t.cat;
+    const badge = t.cat === "primary" ? "badge-pri" : "badge-sec";
+    el.innerHTML = `
+      <div class="rounded-md p-1" style="background:#0b1120">${lesionSVG(t.morph)}</div>
+      <div class="mt-1.5 flex items-center justify-between gap-1">
+        <span class="text-sm font-semibold leading-tight">${t.en}</span>
+        <span class="badge px-1.5 py-0.5 rounded ${badge}">${t.cat==="primary"?"P":"S"}</span>
+      </div>
+      <div class="text-xs leading-tight" style="color:var(--muted)">${t.idn}</div>`;
+    el.addEventListener("click", () => compareMode ? pick(t.id) : openDetail(t.id));
+    grid.appendChild(el);
+  });
+
+  /* ---- search + filter render ---- */
+  function applyState(){
+    const q = search.value.trim().toLowerCase();
+    let shown = 0, hits = 0;
+    DATA.forEach(t => {
+      const card = grid.querySelector(`[data-id="${t.id}"]`);
+      const visible = filter === "all" || t.cat === filter;
+      card.style.display = visible ? "" : "none";
+      if(!visible) return;
+      shown++;
+      card.classList.remove("dim","hit");
+      if(q){
+        const hay = [t.en, t.idn, t.def, ...(SYN[t.id]||[])].join(" ").toLowerCase();
+        if(hay.includes(q)){ card.classList.add("hit"); hits++; }
+        else card.classList.add("dim");
+      }
+    });
+    count.textContent = q
+      ? `${hits} cocok dari ${shown} ditampilkan` + (hits===0 ? " — tidak ada hasil" : "")
+      : `${shown} istilah ditampilkan`;
+  }
+  search.addEventListener("input", applyState);
+
+  document.querySelectorAll(".filt").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      filter = b.dataset.filter;
+      document.querySelectorAll(".filt").forEach(x=>{
+        x.style.background=""; x.style.color="";
+      });
+      b.style.background = "var(--accent)"; b.style.color = "#0f172a";
+      applyState();
+    });
+  });
+
+  /* ---- detail modal ---- */
+  function attrTable(t){
+    const keys = ["Elevasi","Ukuran","Kedalaman","Isi","Permukaan"];
+    return `<table class="morph w-full text-xs mt-3">
+      ${keys.map(k=>`<tr><th>${k}</th><td>${t.attrs[k]}</td></tr>`).join("")}</table>`;
+  }
+
+  function openDetail(id){
+    const t = DATA.find(x=>x.id===id);
+    const badge = t.cat==="primary" ? "badge-pri" : "badge-sec";
+    dCard.innerHTML = `
+      <div class="flex items-start justify-between p-4 border-b" style="border-color:var(--line)">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-xl font-bold">${t.en}</h2>
+            <span class="badge px-1.5 py-0.5 rounded ${badge}">${t.cat==="primary"?"Primer":"Sekunder"}</span>
+          </div>
+          <p class="text-sm" style="color:var(--accent)">${t.idn}</p>
+        </div>
+        <button id="dClose" class="text-2xl leading-none px-2" style="color:var(--muted)">&times;</button>
+      </div>
+      <div class="p-4">
+        <div class="rounded-lg p-2 mb-3" style="background:#0b1120">${lesionSVG(t.morph)}</div>
+        <p class="text-sm mb-3">${t.def}</p>
+        <div class="text-xs space-y-1 mb-2" style="color:var(--muted)">
+          <p><strong style="color:var(--text)">Ambang/pembeda:</strong> ${t.size}</p>
+          <p><strong style="color:var(--text)">Contoh klinis:</strong> ${t.example}</p>
+        </div>
+        ${attrTable(t)}
+        ${t.flags.length ? `<div class="mt-3 text-xs space-y-1">
+          ${t.flags.map(f=>`<p class="flag">⚠️ ${f}</p>`).join("")}</div>` : ""}
+        <p class="mt-3 text-xs" style="color:var(--muted)">📚 Fitzpatrick's Dermatology, 9th ed. (2019).</p>
+      </div>`;
+    detail.classList.add("open");
+    document.getElementById("dClose").addEventListener("click", closeDetail);
+  }
+  function closeDetail(){ detail.classList.remove("open"); }
+  detail.addEventListener("click", e=>{ if(e.target===detail) closeDetail(); });
+
+  /* ---- compare mode ---- */
+  cmpToggle.addEventListener("click", ()=>{
+    compareMode = !compareMode;
+    cmpPanel.classList.toggle("hidden", !compareMode);
+    cmpToggle.style.background = compareMode ? "var(--accent)" : "";
+    cmpToggle.style.color = compareMode ? "#0f172a" : "";
+    if(!compareMode) resetCompare();
+  });
+  cmpClear.addEventListener("click", resetCompare);
+
+  function pick(id){
+    if(picks[0]===id || picks[1]===id) return;          // no duplicates
+    if(picks[0]===null) picks[0]=id;
+    else if(picks[1]===null) picks[1]=id;
+    else { picks=[picks[1], id]; }                       // rotate
+    renderCompare();
+  }
+  function resetCompare(){ picks=[null,null]; renderCompare(); }
+
+  function slotInner(id, slotEl, label){
+    if(!id){ slotEl.className="slot p-3 flex items-center justify-center text-sm";
+      slotEl.style.color="var(--muted)"; slotEl.innerHTML=label; return; }
+    const t=DATA.find(x=>x.id===id);
+    slotEl.className="slot filled p-2"; slotEl.style.color="var(--text)";
+    slotEl.innerHTML=`<div class="rounded p-1 mb-1" style="background:#0b1120">${lesionSVG(t.morph)}</div>
+      <p class="text-sm font-semibold text-center">${t.en} <span style="color:var(--muted)">· ${t.idn}</span></p>`;
+  }
+
+  function renderCompare(){
+    slotInner(picks[0], slotA, "Pilih istilah pertama →");
+    slotInner(picks[1], slotB, "Pilih istilah kedua →");
+    if(!(picks[0] && picks[1])){ cmpResult.innerHTML=""; return; }
+    const a=DATA.find(x=>x.id===picks[0]), b=DATA.find(x=>x.id===picks[1]);
+    const keys=["Elevasi","Ukuran","Kedalaman","Isi","Permukaan"];
+    const diffs=keys.filter(k=>a.attrs[k]!==b.attrs[k]);
+    cmpResult.innerHTML = `
+      <table class="morph w-full text-xs">
+        <tr><th>Dimensi</th><th>${a.en}</th><th>${b.en}</th></tr>
+        ${keys.map(k=>{
+          const d=a.attrs[k]!==b.attrs[k];
+          return `<tr><th>${k}</th>
+            <td class="${d?'hl':''}">${a.attrs[k]}</td>
+            <td class="${d?'hl':''}">${b.attrs[k]}</td></tr>`;
+        }).join("")}
+      </table>
+      <p class="text-xs mt-2"><strong>Pembeda utama:</strong>
+        ${diffs.length ? diffs.join(", ") : "—"}</p>
+      <p class="text-xs mt-1 flag">⚠️ Ingat: ukuran sering bukan satu-satunya pembeda
+        (kedalaman & konfigurasi juga menentukan).</p>`;
+  }
+
+  // init
+  document.querySelector('.filt[data-filter="all"]').click();
+});
+</script>
+
+<!-- ============ PROFESSIONAL AFFIRMATION GATE (own block) ============ -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const gate    = document.getElementById("gate");
+  const chk     = document.getElementById("gateChk");
+  const confirm = document.getElementById("gateConfirm");
+  const reject  = document.getElementById("gateReject");
+  const back    = document.getElementById("gateBack");
+  const mainV   = gate.querySelector(".gate-main");
+  const rejV    = gate.querySelector(".gate-reject");
+
+  // sessionStorage check INSIDE DOMContentLoaded (re-shows each new tab/session)
+  if (sessionStorage.getItem("dermatlas_gate") === "ok") {
+    gate.classList.add("hidden");
+  } else {
+    gate.classList.remove("hidden");
+  }
+
+  chk.addEventListener("change", () => { confirm.disabled = !chk.checked; });
+  confirm.addEventListener("click", () => {
+    if (!chk.checked) return;
+    sessionStorage.setItem("dermatlas_gate", "ok");
+    gate.classList.add("hidden");
+  });
+  reject.addEventListener("click", () => { mainV.style.display="none"; rejV.style.display="block"; });
+  back.addEventListener("click",   () => { rejV.style.display="none"; mainV.style.display="block"; });
+});
+</script>
+
+</body>
+</html>
